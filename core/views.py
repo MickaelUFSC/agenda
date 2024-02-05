@@ -1,32 +1,26 @@
+from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
-from core.models import Evento
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from datetime import datetime, timedelta
-from django.http.response import Http404
-from django.http import JsonResponse
-# Create your views here.
+from django.http import JsonResponse, Http404
+from core.models import Evento
 
 @login_required(login_url='/login/')
 def lista_eventos(request):
     usuario = request.user
     data_atual = datetime.now() - timedelta(hours=12)
     evento = Evento.objects.filter(usuario=usuario)
-
-    dados = {'eventos':evento}
+    dados = {'eventos': evento}
     return render(request, 'agenda.html', dados)
-'''
-def index(request):
-    return redirect('/agenda/')
-'''
 
 def login_user(request):
-    return render(request,'login.html')
+    return render(request, 'login.html')
 
 def logout_user(request):
     logout(request)
     return redirect('/')
+
 def submit_login(request):
     if request.POST:
         username = request.POST.get('username')
@@ -37,7 +31,7 @@ def submit_login(request):
             return redirect('/')
         else:
             messages.error(request, "Usuário ou senha inválido!")
-        return redirect('/')
+            return redirect('/')
 
 @login_required(login_url='/login/')
 def evento(request):
@@ -46,6 +40,7 @@ def evento(request):
     if id_evento:
         dados['evento'] = Evento.objects.get(id=id_evento)
     return render(request, 'evento.html', dados)
+
 @login_required(login_url='/login/')
 def submit_evento(request):
     if request.POST:
@@ -57,18 +52,14 @@ def submit_evento(request):
         id_evento = request.POST.get('id_evento')
         if id_evento:
             evento = Evento.objects.get(id=id_evento)
-            if evento.usuario== usuario:
+            if evento.usuario == usuario:
                 evento.titulo = titulo
                 evento.data_evento = data_evento
                 evento.descricao = descricao
                 evento.local = local
                 evento.save()
-            #Evento.objects.filter(id=id_evento).update(titulo=titulo, data_evento=data_evento, descricao=descricao, local=local)
         else:
             Evento.objects.create(titulo=titulo, data_evento=data_evento, descricao=descricao, usuario=usuario, local=local)
-
-
-
     return redirect('/')
 
 @login_required(login_url='/login/')
@@ -76,7 +67,7 @@ def delete_evento(request, id_evento):
     usuario = request.user
     try:
         evento = Evento.objects.get(id=id_evento)
-    except Exception:
+    except Evento.DoesNotExist:
         raise Http404()
     if usuario == evento.usuario:
         evento.delete()
@@ -84,9 +75,8 @@ def delete_evento(request, id_evento):
         raise Http404()
     return redirect('/')
 
-
 @login_required(login_url='/login/')
 def json_lista_evento(request):
     usuario = request.user
-    evento = Evento.objects.filter(usuario=usuario).values('id','titulo')
+    evento = Evento.objects.filter(usuario=usuario).values('id', 'titulo')
     return JsonResponse(list(evento), safe=False)
